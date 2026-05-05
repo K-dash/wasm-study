@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>wasm-bindgen hello</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 1.5rem; line-height: 1.6; }
+  pre  { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; }
+  .hl  { color: #06f; }
+</style>
+<h1>Stage 2: wasm-bindgen hello</h1>
+<pre id="out">loading...</pre>
+
+<script type="module">
+// wasm-pack build --target web で生成された ES Module をそのまま import。
+// pkg/greet.js が default export として `init` 関数を、named export として
+// 各 #[wasm_bindgen] 関数を提供してくれる。
+import init, { greet, add, make_bytes } from '../pkg/greet.js';
+
+const out = document.getElementById('out');
+
+try {
+  // init() は .wasm を fetch + instantiate する。
+  // top-level await が使えるので最小コードで完結。
+  await init();
+
+  out.textContent = '';
+  const log = (msg, cls = '') => {
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = msg;
+    out.appendChild(line);
+  };
+
+  log(`greet("Yuki")     = ${greet("Yuki")}`);
+  log(`greet("古川 雄希") = ${greet("古川 雄希")}`);  // マルチバイトもOK
+  log(`add(2, 3)         = ${add(2, 3)}`);
+  log(`make_bytes(5)     = [${make_bytes(5).join(', ')}]  (Uint8Array が返る)`);
+
+  log('');
+  log('★Stage 1 と比べて "気持ちよさ" が違うのを観察:', 'hl');
+  log('  - メモリの offset / length を JS 側で計算していない', 'hl');
+  log('  - TextEncoder / TextDecoder を JS 側で呼んでいない', 'hl');
+  log('  - 全部 pkg/greet.js (glue) が裏でやっている', 'hl');
+} catch (e) {
+  out.textContent = 'ERROR: ' + e.message;
+  console.error(e);
+}
+</script>
+</html>

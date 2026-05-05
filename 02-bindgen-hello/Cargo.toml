@@ -1,0 +1,14 @@
+[package]
+name = "greet"
+version = "0.1.0"
+edition = "2021"
+
+# wasm-bindgen は cdylib (= 動的ライブラリ) として吐き出す必要がある。
+# 通常の Rust crate のデフォルトは rlib なので、ここで上書き指定する。
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Rust 側で #[wasm_bindgen] アトリビュートを使うための crate。
+# CLI 側 (wasm-bindgen-cli) のバージョンと patch まで揃ってると安定する。
+wasm-bindgen = "0.2"

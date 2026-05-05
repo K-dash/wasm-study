@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>WAT handson - upper</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 1.5rem; line-height: 1.6; }
+  pre  { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; white-space: pre-wrap; }
+  .ok  { color: #0a7d28; }
+  .err { color: #c33; }
+  .hl  { color: #06f; }
+  code { background: #eee; padding: 0 0.25rem; border-radius: 3px; }
+</style>
+<h1>Step 4: 文字列を WASM に渡す</h1>
+<pre id="out">loading...</pre>
+
+<script type="module">
+const out = document.getElementById('out');
+const log = (msg, cls = '') => {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  out.appendChild(line);
+};
+
+try {
+  const res = await fetch('./upper.wasm');
+  const { instance } = await WebAssembly.instantiateStreaming(res, {});
+  const { memory, to_upper } = instance.exports;
+
+  out.textContent = '';
+
+  // ① 入力文字列を UTF-8 に符号化（ASCII 範囲なら 1 char = 1 byte）
+  const text = 'Hello, WebAssembly World!';
+  const enc = new TextEncoder();
+  const bytes = enc.encode(text);
+  log(`input  = "${text}"`);
+  log(`bytes  = [${[...bytes].slice(0, 16).join(', ')} ...]  (length = ${bytes.length})`);
+
+  // ② 線形メモリの offset 1024 (適当に空いてる場所) にバイト列を置く
+  //    - 「メモリのどこに置くか」は呼び出し側 (= JS) が責任を持つ
+  //    - ここでは生で 1024 を選んだが、本来はアロケータが管理するべき領域
+  const OFFSET = 1024;
+  const view = new Uint8Array(memory.buffer);
+  view.set(bytes, OFFSET);
+
+  // ③ WASM 関数を (offset, length) で呼ぶ
+  const changed = to_upper(OFFSET, bytes.length);
+  log(`to_upper(${OFFSET}, ${bytes.length}) -> ${changed} (書き換えた文字数)`, 'hl');
+
+  // ④ 同じメモリ範囲を読み戻して文字列に復元
+  //    第3引数で「offset から length 分のビュー」を作れる
+  const slice = new Uint8Array(memory.buffer, OFFSET, bytes.length);
+  const result = new TextDecoder().decode(slice);
+  log(`output = "${result}"`, 'ok');
+
+  log('');
+  log('★体感したこと:', 'hl');
+  log('  - 文字列を渡すための「型」は WASM に存在しない。', 'hl');
+  log('    使ったのは i32 が 2 つ (offset, length) と、共有メモリだけ。', 'hl');
+  log('  - WASM 側で書き換えた結果が、JS 側の view からそのまま読み戻せる。', 'hl');
+  log('    = 線形メモリは本当に「同じ実体」を両側から触っている。', 'hl');
+} catch (e) {
+  log('ERROR: ' + e.message, 'err');
+  console.error(e);
+}
+</script>
+</html>

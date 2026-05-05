@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>WAT handson - mem</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 1.5rem; line-height: 1.6; }
+  pre  { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; white-space: pre-wrap; }
+  .ok  { color: #0a7d28; }
+  .err { color: #c33; }
+  .hl  { color: #06f; }
+</style>
+<h1>Step 3: 線形メモリ往復</h1>
+<pre id="out">loading...</pre>
+
+<script type="module">
+const out = document.getElementById('out');
+const log = (msg, cls = '') => {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  out.appendChild(line);
+};
+
+try {
+  const res = await fetch('./mem.wasm');
+  const { instance } = await WebAssembly.instantiateStreaming(res, {});
+  const { memory, read_byte, write_byte } = instance.exports;
+
+  out.textContent = '';
+
+  // ① memory.buffer は ArrayBuffer。ここに直接 view を作って触る。
+  //    Uint8Array は 1 バイトずつ「ビュー」する。memory が伸びる(grow)と
+  //    buffer は新しい ArrayBuffer に差し替わるので、view も作り直す必要がある。
+  const view = new Uint8Array(memory.buffer);
+  log(`memory.buffer.byteLength = ${memory.buffer.byteLength}  (= 1 page = 64KiB)`);
+
+  // ② JS 側からメモリに書き込む → WASM 側 read_byte で読む
+  view[0]  = 65;   // 'A'
+  view[1]  = 66;   // 'B'
+  view[42] = 0xff;
+  log('--- JS → WASM ---');
+  log(`read_byte(0)  = ${read_byte(0)}    (JS が 65 を書いた)`, 'ok');
+  log(`read_byte(1)  = ${read_byte(1)}    (JS が 66 を書いた)`, 'ok');
+  log(`read_byte(42) = ${read_byte(42)}   (JS が 0xff = 255 を書いた)`, 'ok');
+
+  // ③ WASM 側 write_byte で書く → JS 側で view から読む
+  write_byte(100, 7);
+  write_byte(101, 8);
+  log('--- WASM → JS ---');
+  log(`view[100] = ${view[100]}   (WASM が 7 を書いた)`, 'ok');
+  log(`view[101] = ${view[101]}   (WASM が 8 を書いた)`, 'ok');
+
+  // ④ 文字列を「自前で」書いてみる
+  //    これが Step 4 の前哨戦: TextEncoder で UTF-8 に符号化し、メモリの 200..N に置く
+  const text = 'hello';
+  const bytes = new TextEncoder().encode(text);
+  for (let i = 0; i < bytes.length; i++) {
+    write_byte(200 + i, bytes[i]);
+  }
+  log('--- 文字列 "hello" を 200.. に書いた ---');
+  log(`bytes = [${[...bytes].join(', ')}]  (= "hello" の UTF-8)`);
+  // JS 側で読み戻し
+  const slice = new Uint8Array(memory.buffer, 200, bytes.length);
+  log(`decoded = "${new TextDecoder().decode(slice)}"`, 'hl');
+
+  log('');
+  log('★観察: WASM のエクスポートに "string" 型は 1 つも無い。', 'hl');
+  log('  すべて i32 (offset / length / バイト値) でやり取りしている。', 'hl');
+} catch (e) {
+  log('ERROR: ' + e.message, 'err');
+  console.error(e);
+}
+</script>
+</html>

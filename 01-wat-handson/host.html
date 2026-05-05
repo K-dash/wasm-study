@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>WAT handson - host</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 1.5rem; line-height: 1.6; }
+  pre  { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; }
+  .ok  { color: #0a7d28; }
+  .err { color: #c33; }
+</style>
+<h1>WAT handson</h1>
+<pre id="out">loading...</pre>
+
+<script type="module">
+const out = document.getElementById('out');
+const log = (msg, cls = '') => {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  out.appendChild(line);
+};
+
+try {
+  // ① .wasm を fetch してストリームでコンパイル + instantiate
+  //    第二引数の `{}` が import object。今回は import が無いので空。
+  const res = await fetch('./add.wasm');
+  const { instance, module } = await WebAssembly.instantiateStreaming(res, {});
+
+  // ② instance.exports に .wat の (export "add") が生えている
+  const { add } = instance.exports;
+
+  out.textContent = ''; // clear
+  log(`add(2, 3) = ${add(2, 3)}`, 'ok');
+  log(`add(-1, 1) = ${add(-1, 1)}`, 'ok');
+
+  // ③ Module の export 一覧を覗く（型情報は限定的）
+  log('exports = ' + Object.keys(instance.exports).join(', '));
+  log('module.exports = ' + JSON.stringify(WebAssembly.Module.exports(module)));
+} catch (e) {
+  log('ERROR: ' + e.message, 'err');
+  console.error(e);
+}
+</script>
+</html>
