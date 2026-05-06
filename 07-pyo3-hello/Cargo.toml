@@ -1,0 +1,17 @@
+[package]
+name = "pyhello"
+version = "0.1.0"
+edition = "2021"
+
+# PyO3 は Python の C 拡張 (.so / .pyd) を出力する。
+# crate-type = ["cdylib"] は wasm-bindgen と同じだが、出力先が WASM ではなく
+# 「OS ネイティブの C ABI 動的ライブラリ」になる点が決定的に違う。
+[lib]
+name = "pyhello"
+crate-type = ["cdylib"]
+
+[dependencies]
+# pyo3 0.28+ が Python 3.14 まで対応。
+# extension-module feature を入れると Python の埋め込み API ではなく
+# 「Python 拡張モジュールとして動く」モードになる。
+pyo3 = { version = "0.28", features = ["extension-module"] }

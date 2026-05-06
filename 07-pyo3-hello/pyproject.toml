@@ -1,0 +1,20 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pyhello"
+version = "0.1.0"
+description = "Stage 7: PyO3 + maturin hello"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.maturin]
+# pyproject.toml で extension-module feature を有効にする。
+# (Cargo.toml と二重に書いてるように見えるが、これがないと
+#  maturin が「Python 埋め込み」モードでビルドしようとして失敗する)
+features = ["pyo3/extension-module"]
+module-name = "pyhello"

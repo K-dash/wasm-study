@@ -13,6 +13,14 @@ pkg/
 # Node / npm
 node_modules/
 
+# Python / venv / PyO3 生成物
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+*.pyd
+*.so
+
 # Editor / OS
 .vscode/
 .idea/
