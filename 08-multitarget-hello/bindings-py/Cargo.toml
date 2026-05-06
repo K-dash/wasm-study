@@ -1,0 +1,14 @@
+[package]
+name = "multitarget-py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Python module の物理ファイル名は pyproject.toml の module-name で決まる。
+# ここでの name は Cargo crate 名なので Python から見えない。
+name = "multitarget_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+multitarget-core = { path = "../core" }
+pyo3 = { workspace = true }

@@ -1,0 +1,11 @@
+[package]
+name = "multitarget-core"
+version = "0.1.0"
+edition = "2021"
+
+# core は pure Rust ライブラリ。crate-type は明示しない (デフォルトの rlib のみ)。
+# 外部 ABI に晒すのは façade の責務、core は素の Rust ロジックに専念する。
+#
+# Stage 9 で expr_ir を流し込むときも、ここには #[wasm_bindgen] や #[pyfunction] が
+# 一切登場しない状態を維持する。これが「core 不可侵」の設計原則。
+[dependencies]

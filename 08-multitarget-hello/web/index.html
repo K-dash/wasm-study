@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>Stage 8: multitarget hello (wasm)</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 1.5rem; line-height: 1.6; }
+  pre  { background: #f4f4f4; padding: 0.75rem; border-radius: 6px; }
+  .hl  { color: #06f; }
+  .ok  { color: #0a7d28; }
+</style>
+<h1>Stage 8: multitarget hello — JS 側</h1>
+<pre id="out">loading...</pre>
+
+<script type="module">
+// bindings-wasm/pkg/ は ../bindings-wasm/pkg からの相対パス。
+// wasm-pack build --target web --out-dir pkg で出力される想定。
+import init, { greet, add, count_chars } from '../bindings-wasm/pkg/multitarget_wasm.js';
+
+const out = document.getElementById('out');
+
+try {
+  await init();
+  out.textContent = '';
+  const log = (msg, cls = '') => {
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = msg;
+    out.appendChild(line);
+  };
+
+  log(`greet("Yuki")            = ${greet("Yuki")}`, 'ok');
+  log(`add(2, 3)                = ${add(2, 3)}`, 'ok');
+  log(`count_chars(["hi","ほげ"]) = [${count_chars(["hi", "ほげ"]).join(", ")}]`, 'ok');
+
+  log('');
+  log('★この出力は core::greet / core::add / core::count_chars が', 'hl');
+  log('  bindings-wasm 経由で呼び出された結果。', 'hl');
+  log('  同じ core を bindings-py 経由で呼ぶと Python から同じ値が出る。', 'hl');
+} catch (e) {
+  out.textContent = 'ERROR: ' + e.message;
+  console.error(e);
+}
+</script>
+</html>

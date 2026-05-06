@@ -1,0 +1,13 @@
+[package]
+name = "multitarget-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# core を相対パス依存で取り込む。同じ workspace 内なので path = ".." 配下を指す。
+multitarget-core = { path = "../core" }
+# wasm-bindgen のバージョンは workspace.dependencies で集約管理
+wasm-bindgen = { workspace = true }

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "multitarget-py"
+version = "0.1.0"
+description = "Stage 8: multitarget hello (PyO3 façade)"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "multitarget_py"
+# manifest-path で「自分の Cargo.toml を見ろ」と指定する必要なし
+# (pyproject.toml と同じディレクトリの Cargo.toml が自動で選ばれる)

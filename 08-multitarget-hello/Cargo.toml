@@ -1,0 +1,19 @@
+# Cargo workspace のルート Cargo.toml。
+# 「core」と「各 façade」を 1 つのワークスペースにまとめて、
+# 同じソースから複数ターゲットの成果物を出す土台にする。
+#
+# 注意: cdylib メンバー (bindings-wasm / bindings-py) を含むため、
+# `cargo build --workspace` ではなく、各 façade ディレクトリで
+# wasm-pack / maturin を呼ぶ運用にする (ターゲット triple が違うので)。
+[workspace]
+resolver = "2"
+members = [
+    "core",
+    "bindings-wasm",
+    "bindings-py",
+]
+
+# workspace.dependencies で依存バージョンを一元管理
+[workspace.dependencies]
+wasm-bindgen = "0.2"
+pyo3 = { version = "0.28", features = ["extension-module"] }
